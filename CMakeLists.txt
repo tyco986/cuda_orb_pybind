@@ -28,6 +28,7 @@ if (UNIX)
 endif()
 
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(CPP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cuda_orb_cpp)
 set(cuda_sources
   ${SRC_DIR}/orbd.cu
   ${SRC_DIR}/orbd.h
@@ -40,20 +41,48 @@ set(cuda_sources
 )
 
 set(sources
-  ${SRC_DIR}/main.cpp
+  ${CPP_DIR}/orb_aligner.cpp
 )
 
-include_directories(${SRC_DIR})
+include_directories(${SRC_DIR} ${CPP_DIR})
+
+# NVML for GPU peak monitoring
+set(NVML_LIBRARY "")
+if(EXISTS "/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1")
+  set(NVML_LIBRARY "/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1")
+endif()
+if(NOT NVML_LIBRARY)
+  find_library(NVML_LIBRARY nvidia-ml
+    PATHS /usr/local/cuda/targets/x86_64-linux/lib/stubs
+          /usr/local/cuda-12/targets/x86_64-linux/lib/stubs)
+endif()
+find_path(NVML_INCLUDE_DIR nvml.h
+  PATHS /usr/local/cuda/targets/x86_64-linux/include
+        /usr/local/cuda/include
+        /usr/include)
+if(NVML_LIBRARY AND NVML_INCLUDE_DIR)
+  message(STATUS "Found NVML: ${NVML_LIBRARY}")
+  set(HAVE_NVML 1)
+else()
+  message(STATUS "NVML not found, GPU peak monitoring disabled")
+  set(HAVE_NVML 0)
+endif()
 
 #SET(CUDA_SEPARABLE_COMPILATION ON)
 
-cuda_add_executable(cudaorb ${cuda_sources} ${sources} OPTIONS -arch=sm_75)
+cuda_add_executable(cuda_orb ${cuda_sources} ${sources}
+  ${CPP_DIR}/test_orb_aligner.cpp
+  OPTIONS -arch=sm_75)
 
-set_target_properties(cudaorb PROPERTIES
-  COMPILE_FLAGS "${EXTRA_CXX_FLAGS}"
+set_target_properties(cuda_orb PROPERTIES
+  COMPILE_FLAGS "${EXTRA_CXX_FLAGS} -DHAVE_NVML=${HAVE_NVML}"
 )
 
-target_link_libraries(cudaorb ${CUDA_cudadevrt_LIBRARY} ${OpenCV_LIBS})
+target_link_libraries(cuda_orb ${CUDA_cudadevrt_LIBRARY} ${OpenCV_LIBS})
+if(NVML_LIBRARY)
+  target_link_libraries(cuda_orb ${NVML_LIBRARY})
+  target_include_directories(cuda_orb PRIVATE ${NVML_INCLUDE_DIR})
+endif()
 
 # Python module (pybind11 + scikit-build)
 if(pybind11_FOUND AND CUDA_FOUND)

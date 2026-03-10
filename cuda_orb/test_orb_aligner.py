@@ -10,7 +10,7 @@ from pathlib import Path
 
 import numpy as np
 
-_TEST_DIR = Path(__file__).resolve().parent
+_TEST_DIR = Path(__file__).resolve().parent.parent / "example_data"
 DEFAULT_IMAGE = _TEST_DIR / "image.png"
 DEFAULT_TEMPLATE = _TEST_DIR / "template.png"
 import cv2
