@@ -36,8 +36,6 @@ set(cuda_sources
   ${SRC_DIR}/orb.h
   ${SRC_DIR}/orb_structures.h
   ${SRC_DIR}/cuda_utils.h
-  ${SRC_DIR}/warmup.cu
-  ${SRC_DIR}/warmup.h
 )
 
 set(sources
@@ -86,7 +84,7 @@ endif()
 
 # Python module (pybind11 + scikit-build)
 if(pybind11_FOUND AND CUDA_FOUND)
-  cuda_add_library(orb_core STATIC ${SRC_DIR}/orbd.cu ${SRC_DIR}/orb.cpp ${SRC_DIR}/warmup.cu OPTIONS -arch=sm_75)
+  cuda_add_library(orb_core STATIC ${SRC_DIR}/orbd.cu ${SRC_DIR}/orb.cpp OPTIONS -arch=sm_75)
   set_target_properties(orb_core PROPERTIES COMPILE_FLAGS "${EXTRA_CXX_FLAGS}")
   target_include_directories(orb_core PUBLIC ${SRC_DIR})
 

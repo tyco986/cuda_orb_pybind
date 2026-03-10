@@ -5,7 +5,6 @@
  */
 
 #include "orb_aligner.h"
-#include "warmup.h"
 #include "cuda_utils.h"
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -179,7 +178,6 @@ int main(int argc, char** argv) {
     }
 
     if (device >= 0) {
-        warmup();
         initDevice(device);
     }
 
