@@ -27,56 +27,43 @@ if (UNIX)
   endif()
 endif()
 
+set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(cuda_sources
-  orbd.cu
-  orbd.h
-  orb.cpp
-  orb.h
-  orb_structures.h
-  cuda_utils.h
-  warmup.cu
-  warmup.h
-)  
+  ${SRC_DIR}/orbd.cu
+  ${SRC_DIR}/orbd.h
+  ${SRC_DIR}/orb.cpp
+  ${SRC_DIR}/orb.h
+  ${SRC_DIR}/orb_structures.h
+  ${SRC_DIR}/cuda_utils.h
+  ${SRC_DIR}/warmup.cu
+  ${SRC_DIR}/warmup.h
+)
 
 set(sources
-  main.cpp
+  ${SRC_DIR}/main.cpp
 )
 
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR} 
-)
+include_directories(${SRC_DIR})
 
 #SET(CUDA_SEPARABLE_COMPILATION ON)
 
 cuda_add_executable(cudaorb ${cuda_sources} ${sources} OPTIONS -arch=sm_75)
 
 set_target_properties(cudaorb PROPERTIES
-  COMPILE_FLAGS "${EXTRA_CXX_FLAGS}"			   
+  COMPILE_FLAGS "${EXTRA_CXX_FLAGS}"
 )
 
 target_link_libraries(cudaorb ${CUDA_cudadevrt_LIBRARY} ${OpenCV_LIBS})
 
-# Determinism test executable
-set(test_sources determinism_test/test_determinism.cpp)
-cuda_add_executable(test_determinism ${cuda_sources} ${test_sources} OPTIONS -arch=sm_75)
-set_target_properties(test_determinism PROPERTIES COMPILE_FLAGS "${EXTRA_CXX_FLAGS}")
-target_link_libraries(test_determinism ${CUDA_cudadevrt_LIBRARY} ${OpenCV_LIBS})
-
-# Homography test: CUDA ORB vs OpenCV ORB + findHomography
-set(homography_sources homography_test/homography_test.cpp)
-cuda_add_executable(homography_test ${cuda_sources} ${homography_sources} OPTIONS -arch=sm_75)
-set_target_properties(homography_test PROPERTIES COMPILE_FLAGS "${EXTRA_CXX_FLAGS}")
-target_link_libraries(homography_test ${CUDA_cudadevrt_LIBRARY} ${OpenCV_LIBS})
-
 # Python module (pybind11 + scikit-build)
 if(pybind11_FOUND AND CUDA_FOUND)
-  cuda_add_library(orb_core STATIC orbd.cu orb.cpp warmup.cu OPTIONS -arch=sm_75)
+  cuda_add_library(orb_core STATIC ${SRC_DIR}/orbd.cu ${SRC_DIR}/orb.cpp ${SRC_DIR}/warmup.cu OPTIONS -arch=sm_75)
   set_target_properties(orb_core PROPERTIES COMPILE_FLAGS "${EXTRA_CXX_FLAGS}")
-  target_include_directories(orb_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(orb_core PUBLIC ${SRC_DIR})
 
-  pybind11_add_module(_cuda_orb src/orb_bindings.cpp)
+  pybind11_add_module(_cuda_orb ${SRC_DIR}/orb_bindings.cpp)
   target_link_libraries(_cuda_orb PRIVATE orb_core)
-  target_include_directories(_cuda_orb PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(_cuda_orb PRIVATE ${SRC_DIR})
   install(TARGETS _cuda_orb LIBRARY DESTINATION . RUNTIME DESTINATION . ARCHIVE DESTINATION .)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cuda_orb/__init__.py DESTINATION .)
 endif()

@@ -15,15 +15,14 @@ ORB (Oriented FAST and Rotated BRIEF) keypoints detection, descriptors computati
 OpenCV, CUDA
 
 # Result
-Keypoints example:
-![orb_show1](data/orb_show1.jpg)
 
-Matching example:
-![orb_show_matched](data/orb_show_matched.jpg)
+Run the demo to generate output images:
+```bash
+mkdir -p build && cd build && cmake .. && make cudaorb
+./cudaorb 0 test/template.png test/image.png output
+```
 
-OpenCV example:
-
-![cvshow_matched](data/cvshow_matched.jpg)
+Keypoints and matching examples are saved to `output/orb_show1.jpg`, `output/orb_show2.jpg`, `output/orb_show_matched.jpg`, `output/cvshow_matched.jpg`.
 
 # Speed
 

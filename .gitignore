@@ -33,10 +33,8 @@ dist/
 *~
 
 # Generated / output
-data/orb_show*.jpg
-data/cvshow_matched.jpg
-data/test_img.png
-determinism_test/results/*.txt
+output/orb_show*.jpg
+output/cvshow_matched.jpg
 
 # CUDA
 *.i

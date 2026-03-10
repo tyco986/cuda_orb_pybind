@@ -13,8 +13,8 @@ import numpy as np
 _TEST_DIR = Path(__file__).resolve().parent
 DEFAULT_IMAGE = _TEST_DIR / "image.png"
 DEFAULT_TEMPLATE = _TEST_DIR / "template.png"
+import cv2
 import psutil
-from skimage import io
 
 import cuda_orb
 import pynvml
@@ -74,8 +74,8 @@ def main():
     if not template_path.exists():
         raise FileNotFoundError(f"Template not found: {template_path}")
 
-    img = io.imread(str(image_path), as_gray=True)
-    tpl = io.imread(str(template_path), as_gray=True)
+    img = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+    tpl = cv2.imread(str(template_path), cv2.IMREAD_GRAYSCALE)
 
     batch = args.batch
     template_batch = np.tile(tpl[np.newaxis, :, :], (batch, 1, 1))

@@ -28,11 +28,11 @@ def _to_gray_u8(x) -> np.ndarray:
         arr = arr[np.newaxis]
     if arr.dtype == np.uint8:
         return arr
-    if arr.dtype in (np.float32, np.float64):
-        if arr.max() <= 1.0:
-            return (arr * 255.0).clip(0, 255).astype(np.uint8)
-        return arr.clip(0, 255).astype(np.uint8)
-    return arr.astype(np.uint8)
+    alpha = 255.0 if arr.flat[0] <= 1.0 else 1.0
+    out = np.empty(arr.shape, dtype=np.uint8)
+    for b in range(arr.shape[0]):
+        cv2.convertScaleAbs(arr[b], dst=out[b], alpha=alpha)
+    return out
 
 
 class OrbAligner:
@@ -45,9 +45,9 @@ class OrbAligner:
 
     def __init__(
         self,
-        ransac_thresh: float = 3.0,
-        ransac_max_iters: int = 2000,
-        ransac_confidence: float = 0.995,
+        ransac_thresh: float = 5.0,
+        ransac_max_iters: int = 200,
+        ransac_confidence: float = 0.99,
         ransac_seed: int | None = None,
         nndr: float = DRATIO,
         max_pts: int = 10000,

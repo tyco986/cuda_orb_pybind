@@ -145,7 +145,7 @@ void cudaOrbDemo2(int argc, char** argv)
 	int devNum = 0;
 	if (argc > 1)
 		devNum = std::atoi(argv[1]);
-	std::string save_dir = "";
+	std::string save_dir = "output";
 
 	// Read images using OpenCV
 	cv::Mat limg, rimg;
@@ -161,9 +161,9 @@ void cudaOrbDemo2(int argc, char** argv)
 			<< "\t1. DeviceNumber" << std::endl
 			<< "\t2. Path to template image" << std::endl
 			<< "\t3. Path to target image" << std::endl
-			<< "\t4. Directory to save results" << std::endl;
+			<< "\t4. Directory to save results (default: output)" << std::endl;
 		return;
-	}		
+	}
 
 	// Initial Cuda images and download images to device
 	std::cout << "Initializing data..." << std::endl;
@@ -277,7 +277,7 @@ void cvOrbDemo2(int argc, char** argv)
 	int devNum = 0;
 	if (argc > 1)
 		devNum = std::atoi(argv[1]);
-	std::string save_dir = "";
+	std::string save_dir = "output";
 
 	// Read images using OpenCV
 	cv::Mat limg, rimg;
