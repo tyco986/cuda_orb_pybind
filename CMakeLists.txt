@@ -59,3 +59,9 @@ set(test_sources determinism_test/test_determinism.cpp)
 cuda_add_executable(test_determinism ${cuda_sources} ${test_sources} OPTIONS -arch=sm_75)
 set_target_properties(test_determinism PROPERTIES COMPILE_FLAGS "${EXTRA_CXX_FLAGS}")
 target_link_libraries(test_determinism ${CUDA_cudadevrt_LIBRARY} ${OpenCV_LIBS})
+
+# Homography test: CUDA ORB vs OpenCV ORB + findHomography
+set(homography_sources homography_test/homography_test.cpp)
+cuda_add_executable(homography_test ${cuda_sources} ${homography_sources} OPTIONS -arch=sm_75)
+set_target_properties(homography_test PROPERTIES COMPILE_FLAGS "${EXTRA_CXX_FLAGS}")
+target_link_libraries(homography_test ${CUDA_cudadevrt_LIBRARY} ${OpenCV_LIBS})
