@@ -1,0 +1,2 @@
+/root/project/cuda_orb_pybind/_skbuild/linux-x86_64-3.10/cmake-install/cuda_orb/./_cuda_orb.cpython-310-x86_64-linux-gnu.so
+/root/project/cuda_orb_pybind/_skbuild/linux-x86_64-3.10/cmake-install/cuda_orb/./__init__.py

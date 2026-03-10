@@ -197,7 +197,7 @@ void test_Orbor_detectAndCompute() {
     r.file = "orb.cpp";
     r.line = 57;
 
-    cv::Mat test_img = cv::imread("data/img1.png", cv::IMREAD_GRAYSCALE);
+    cv::Mat test_img = cv::imread("test/image.png", cv::IMREAD_GRAYSCALE);
     if (test_img.empty()) {
         test_img = cv::Mat::zeros(240, 320, CV_8UC1);
         cv::randu(test_img, 0, 256);
@@ -253,8 +253,8 @@ void test_Orbor_match() {
     r.file = "orb.cpp";
     r.line = 102;
 
-    cv::Mat img1 = cv::imread("data/img1.png", cv::IMREAD_GRAYSCALE);
-    cv::Mat img2 = cv::imread("data/img2.png", cv::IMREAD_GRAYSCALE);
+    cv::Mat img1 = cv::imread("test/image.png", cv::IMREAD_GRAYSCALE);
+    cv::Mat img2 = cv::imread("test/template.png", cv::IMREAD_GRAYSCALE);
     if (img1.empty()) img1 = cv::Mat::zeros(240, 320, CV_8UC1);
     if (img2.empty()) img2 = img1.clone();  // fallback to img1 if img2 missing
     if (!img1.isContinuous()) img1 = img1.clone();

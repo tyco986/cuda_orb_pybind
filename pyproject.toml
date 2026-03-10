@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools>=42", "scikit-build>=0.16", "pybind11>=2.10", "numpy", "cmake"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cuda-orb"
+version = "0.1.0"
+description = "CUDA-accelerated ORB feature detection and matching"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+dependencies = ["numpy", "scikit-image", "nvidia-ml-py"]

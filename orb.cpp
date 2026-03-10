@@ -30,6 +30,10 @@ namespace orb
 		{
 			CHECK(cudaFree(bmem));
 		}
+		if (d_detect_buf)
+		{
+			CHECK(cudaFree(d_detect_buf));
+		}
 	}
 
 
@@ -46,7 +50,6 @@ namespace orb
 		max_pts = _max_pts;
 
 		getPointCounter((void**)&d_point_counter_addr);
-		setMaxNumPoints(max_pts);
 		setFastThresholdLUT(fast_threshold);
 		setUmax(patch_size);
 		setPattern(patch_size, wta_k);
@@ -72,11 +75,8 @@ namespace orb
 			CHECK(cudaMemset(vmem, 0, vbytes));
 		}
 
-		// Detect keypoints
+		// Detect keypoints (returns sorted, truncated to max_pts)
 		this->detect(image, result);
-
-		// Sort keypoints for deterministic order (score desc, y, x)
-		hSortKeypoints(result.d_data, result.num_pts);
 
 		// Compute descriptors
 		if (compute_desc && result.num_pts > 0)
@@ -180,6 +180,9 @@ namespace orb
 			offsets[k] = offsets[j] + osizes[j];
 		}
 		obytes = offsets[max_octave] * sizeof(unsigned char);
+		// Margin for safe out-of-bounds reads in angleIC/gDescribe at last octave border
+		int margin_pitch = max_octave > 1 ? pitchs[max_octave - 1] : pitchs[0];
+		obytes += (patch_size / 2 + 1) * margin_pitch;
 		vbytes = osizes[0] * (sizeof(float) + sizeof(int));
 
 		// Clear old memory and Allocate new memory
@@ -200,6 +203,21 @@ namespace orb
 		bbytes = osizes[0] * sizeof(unsigned char);
 		CHECK(cudaMalloc((void**)&bmem, bbytes));
 
+		// Size detection buffer to image area — guarantees capturing all keypoints
+		int new_detect_size = widths[0] * heights[0] / 8;
+		if (new_detect_size < max_pts * 2)
+			new_detect_size = max_pts * 2;
+		if (new_detect_size != detect_buf_size)
+		{
+			detect_buf_size = new_detect_size;
+			if (d_detect_buf)
+			{
+				CHECK(cudaFree(d_detect_buf));
+			}
+			CHECK(cudaMalloc((void**)&d_detect_buf, sizeof(OrbPoint) * detect_buf_size));
+			setMaxNumPoints(detect_buf_size);
+		}
+
 		makeOffsets(pitchs, max_octave);
 	}
 
@@ -207,10 +225,29 @@ namespace orb
 	void Orbor::detect(unsigned char* image, OrbData& result)
 	{
 		CHECK(cudaMemset(d_point_counter_addr, 0, sizeof(unsigned int)));
+
+		// Detect into over-allocated buffer to capture all keypoints
+		OrbData detect_tmp{};
+		detect_tmp.d_data = d_detect_buf;
 		const bool use_harris = score_type == HARRIS_SCORE;
-		hFastDectectWithNMS(image, omem, vmem, result, oszp.data(), max_octave, fast_threshold, edge_threshold, use_harris);
-		CHECK(cudaMemcpy(&result.num_pts, d_point_counter_addr, sizeof(unsigned int), cudaMemcpyDeviceToHost));
-		result.num_pts = MIN(result.num_pts, max_pts);
+		hFastDectectWithNMS(image, omem, vmem, detect_tmp, oszp.data(), max_octave, fast_threshold, edge_threshold, use_harris);
+
+		unsigned int actual_count;
+		CHECK(cudaMemcpy(&actual_count, d_point_counter_addr, sizeof(unsigned int), cudaMemcpyDeviceToHost));
+		actual_count = MIN(actual_count, (unsigned int)detect_buf_size);
+
+		// Sort all detected keypoints, then keep only top max_pts
+		hSortKeypoints(d_detect_buf, (int)actual_count);
+		result.num_pts = MIN((int)actual_count, max_pts);
+		if (result.num_pts > 0)
+		{
+			CHECK(cudaMemcpy(result.d_data, d_detect_buf,
+				sizeof(OrbPoint) * result.num_pts, cudaMemcpyDeviceToDevice));
+		}
+
+		// Sync GPU counter so downstream kernels (angleIC, gDescribe) respect truncated count
+		unsigned int synced = (unsigned int)result.num_pts;
+		CHECK(cudaMemcpy(d_point_counter_addr, &synced, sizeof(unsigned int), cudaMemcpyHostToDevice));
 	}
 
 }
