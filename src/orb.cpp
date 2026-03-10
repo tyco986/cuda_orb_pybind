@@ -123,7 +123,6 @@ namespace orb
 	void Orbor::initOrbData(OrbData& data, const int max_pts, const bool host, const bool dev)
 	{
 		data.num_pts = 0;
-		//data.max_pts = max_pts;
 		const size_t size = sizeof(OrbPoint) * max_pts;
 		data.h_data = host ? (OrbPoint*)calloc(1, size) : NULL;
 		data.d_data = NULL;
@@ -145,7 +144,6 @@ namespace orb
 			free(data.h_data);
 		}
 		data.num_pts = 0;
-		//data.max_pts = 0;
 	}
 
 

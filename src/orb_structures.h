@@ -21,7 +21,6 @@ namespace orb
 	struct OrbData
 	{
 		int num_pts;         // Number of available ORB points
-		//int max_pts;         // Number of allocated ORB points
 		OrbPoint* h_data;    // Host (CPU) data
 		OrbPoint* d_data;    // Device (GPU) data
 	};

@@ -31,7 +31,6 @@ namespace orb
 		void freeOrbData(OrbData& data);
 
 	private:
-		//static const int kbytes = 32;
 		// The number of pyramid levels.
 		int noctaves = 5;
 		// Truly octave layers
