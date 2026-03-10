@@ -2,4 +2,4 @@ build/
 _skbuild/
 cuda_orb/__pycache__/
 cuda_orb/*.so
-cuda_orb/*.egg-info
+cuda_orb.egg-info

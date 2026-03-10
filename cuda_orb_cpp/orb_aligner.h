@@ -16,8 +16,9 @@ struct OrbAlignerConfig {
 };
 
 /**
- * C++ OrbAligner: GPU ORB detect+match + cv::findHomography (RANSAC).
+ * C++ OrbAligner: GPU (CUDA) or CPU (OpenCV) ORB detect+match + cv::findHomography (RANSAC).
  * Matches Python cuda_orb.OrbAligner behavior.
+ * device >= 0: CUDA device ID; device < 0 (e.g. -1): use OpenCV ORB on CPU.
  */
 class OrbAligner {
 public:
@@ -40,8 +41,12 @@ public:
 
 private:
     OrbAlignerConfig config_;
+    int device_;
     struct Impl;
     Impl* impl_ = nullptr;
+
+    void detectAndMatchCpu(const cv::Mat& img1, const cv::Mat& img2, float nndr,
+                          std::vector<cv::Point2f>& pts1, std::vector<cv::Point2f>& pts2);
 };
 
 }  // namespace orb

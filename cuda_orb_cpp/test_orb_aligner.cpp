@@ -36,7 +36,7 @@ static void usage(const char* prog) {
               << "  --image PATH      Input image (default: example_data/image.png)\n"
               << "  --template PATH   Template image (default: example_data/template.png)\n"
               << "  --batch N         Batch size (default: 8)\n"
-              << "  --device N        CUDA device (default: 0)\n"
+              << "  --device N|cpu    CUDA device ID or 'cpu' for OpenCV ORB (default: 0)\n"
               << "  --no-nndr         Disable NNDR filter\n";
 }
 
@@ -57,8 +57,13 @@ static bool parseArgs(int argc, char** argv,
             template_path = argv[++i];
         else if (arg == "--batch" && i + 1 < argc)
             batch = std::atoi(argv[++i]);
-        else if (arg == "--device" && i + 1 < argc)
-            device = std::atoi(argv[++i]);
+        else if (arg == "--device" && i + 1 < argc) {
+            std::string dev_str = argv[++i];
+            if (dev_str == "cpu" || dev_str == "CPU")
+                device = -1;
+            else
+                device = std::atoi(dev_str.c_str());
+        }
         else if (arg == "--no-nndr")
             use_nndr = false;
         else if (arg == "--help" || arg == "-h") {
@@ -173,8 +178,10 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    warmup();
-    initDevice(device);
+    if (device >= 0) {
+        warmup();
+        initDevice(device);
+    }
 
     std::vector<cv::Mat> templates(batch), images(batch);
     for (int b = 0; b < batch; b++) {
@@ -198,7 +205,7 @@ int main(int argc, char** argv) {
             aligner.findTransformBatch(templates, images, H_out, mot_out);
         }
 
-        std::thread monitor_thread(monitorLoop, std::ref(mon), device);
+        std::thread monitor_thread(monitorLoop, std::ref(mon), device >= 0 ? device : 0);
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
         auto t0 = std::chrono::high_resolution_clock::now();
@@ -236,6 +243,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    CHECK(cudaDeviceReset());
+    if (device >= 0)
+        CHECK(cudaDeviceReset());
     return 0;
 }

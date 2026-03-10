@@ -2,6 +2,7 @@
 #include "orb.h"
 #include "cuda_utils.h"
 #include <opencv2/calib3d.hpp>
+#include <opencv2/features2d.hpp>
 #include <opencv2/imgproc.hpp>
 
 namespace orb {
@@ -81,13 +82,54 @@ struct OrbAligner::Impl {
 };
 
 OrbAligner::OrbAligner(int device, const OrbAlignerConfig& config)
-    : config_(config) {
-    initDevice(device);
-    impl_ = new Impl(config_.max_pts, config_.noctaves, 31, config_.fast_threshold, 31, 2);
+    : config_(config), device_(device) {
+    if (device >= 0) {
+        initDevice(device);
+        impl_ = new Impl(config_.max_pts, config_.noctaves, 31, config_.fast_threshold, 31, 2);
+    } else {
+        impl_ = nullptr;
+    }
 }
 
 OrbAligner::~OrbAligner() {
-    delete impl_;
+    if (impl_) delete impl_;
+}
+
+void OrbAligner::detectAndMatchCpu(const cv::Mat& img1, const cv::Mat& img2, float nndr,
+                                   std::vector<cv::Point2f>& pts1, std::vector<cv::Point2f>& pts2) {
+    pts1.clear();
+    pts2.clear();
+    if (img1.empty() || img2.empty() || img1.type() != CV_8UC1 || img2.type() != CV_8UC1)
+        return;
+    cv::Ptr<cv::ORB> orb = cv::ORB::create(config_.max_pts, 2.0f, config_.noctaves, 31, 0, 2,
+                                           cv::ORB::HARRIS_SCORE, 31, config_.fast_threshold);
+    std::vector<cv::KeyPoint> kp1, kp2;
+    cv::Mat desc1, desc2;
+    orb->detectAndCompute(img1, cv::noArray(), kp1, desc1);
+    orb->detectAndCompute(img2, cv::noArray(), kp2, desc2);
+    if (desc1.empty() || desc2.empty() || kp1.empty() || kp2.empty())
+        return;
+    cv::BFMatcher matcher(cv::NORM_HAMMING, false);
+    if (nndr >= 1.0f) {
+        std::vector<cv::DMatch> matches;
+        matcher.match(desc1, desc2, matches);
+        for (const auto& m : matches) {
+            pts1.push_back(kp1[m.queryIdx].pt);
+            pts2.push_back(kp2[m.trainIdx].pt);
+        }
+    } else {
+        std::vector<std::vector<cv::DMatch>> knn;
+        matcher.knnMatch(desc1, desc2, knn, 2);
+        for (const auto& m_n : knn) {
+            if (m_n.size() == 2 && m_n[0].distance < nndr * m_n[1].distance) {
+                pts1.push_back(kp1[m_n[0].queryIdx].pt);
+                pts2.push_back(kp2[m_n[0].trainIdx].pt);
+            } else if (m_n.size() == 1) {
+                pts1.push_back(kp1[m_n[0].queryIdx].pt);
+                pts2.push_back(kp2[m_n[0].trainIdx].pt);
+            }
+        }
+    }
 }
 
 bool OrbAligner::findTransform(const cv::Mat& template_img, const cv::Mat& image,
@@ -100,7 +142,11 @@ bool OrbAligner::findTransform(const cv::Mat& template_img, const cv::Mat& image
         cv::cvtColor(image, img, cv::COLOR_BGR2GRAY);
 
     std::vector<cv::Point2f> pts1, pts2;
-    impl_->detectAndMatch(tpl, img, config_.nndr, pts1, pts2);
+    if (impl_) {
+        impl_->detectAndMatch(tpl, img, config_.nndr, pts1, pts2);
+    } else {
+        detectAndMatchCpu(tpl, img, config_.nndr, pts1, pts2);
+    }
 
     if (pts1.size() < 4) {
         H_out = cv::Mat::eye(3, 3, CV_32F);

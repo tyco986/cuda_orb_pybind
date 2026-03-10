@@ -82,7 +82,7 @@ python setup.py develop
 | `--image PATH` | 输入图像路径 | `example_data/image.png` |
 | `--template PATH` | 模板图像路径 | `example_data/template.png` |
 | `--batch N` | 批大小 | 8 |
-| `--device N` | CUDA 设备 ID | 0 |
+| `--device N\|cpu` | CUDA 设备 ID 或 `cpu`（使用 OpenCV ORB） | 0 |
 | `--no-nndr` | 关闭 NNDR 过滤 | - |
 
 **示例：**
@@ -106,7 +106,7 @@ python setup.py develop
 import cv2
 import cuda_orb
 
-# 创建配准器
+# 创建配准器（device=0 为 GPU，device="cpu" 使用 OpenCV ORB）
 aligner = cuda_orb.OrbAligner(device=0)
 
 # 单对图像

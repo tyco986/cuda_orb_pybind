@@ -55,9 +55,8 @@ def main():
     )
     parser.add_argument(
         "--device",
-        type=int,
-        default=0,
-        help="CUDA device ID (default: 0)",
+        default="0",
+        help="CUDA device ID or 'cpu' for OpenCV ORB (default: 0)",
     )
     parser.add_argument(
         "--no-nndr",
@@ -81,13 +80,17 @@ def main():
     template_batch = np.tile(tpl[np.newaxis, :, :], (batch, 1, 1))
     image_batch = np.tile(img[np.newaxis, :, :], (batch, 1, 1))
 
-    aligner = cuda_orb.OrbAligner(device=args.device, use_nndr=not args.no_nndr)
+    device = args.device if isinstance(args.device, str) else str(args.device)
+    device_val = "cpu" if device.lower() == "cpu" else int(device)
+    aligner = cuda_orb.OrbAligner(device=device_val, use_nndr=not args.no_nndr)
 
     for _ in range(3):
         _ = aligner.find_transform(template_batch, image_batch)
 
-    pynvml.nvmlInit()
-    gpu_handle = pynvml.nvmlDeviceGetHandleByIndex(args.device)
+    gpu_handle = None
+    if device_val != "cpu":
+        pynvml.nvmlInit()
+        gpu_handle = pynvml.nvmlDeviceGetHandleByIndex(int(device_val))
 
     process = psutil.Process()
     gpu_peak = [0]
@@ -107,7 +110,8 @@ def main():
     stop_event.set()
     monitor.join()
 
-    pynvml.nvmlShutdown()
+    if gpu_handle is not None:
+        pynvml.nvmlShutdown()
 
     elapsed_ms = (t1 - t0) * 1000
     gpu_mb = gpu_peak[0] / (1024 * 1024)
