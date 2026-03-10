@@ -47,7 +47,7 @@ namespace orb
 	/* Compute descriptors */
 	void hDescribe(unsigned char* octave_images, OrbData& result, unsigned char* desc, int wta_k, int noctaves);
 
-	/* Match descriptors */
-	void hMatch(OrbData& result1, OrbData& result2, unsigned char* desc1, unsigned char* desc2);
+	/* Match descriptors with NNDR filtering */
+	void hMatch(OrbData& result1, OrbData& result2, unsigned char* desc1, unsigned char* desc2, float nndr_ratio = 0.75f);
 
 }

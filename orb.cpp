@@ -108,9 +108,9 @@ namespace orb
 	}
 
 
-	void Orbor::match(OrbData& result1, OrbData& result2, unsigned char* desc1, unsigned char* desc2)
+	void Orbor::match(OrbData& result1, OrbData& result2, unsigned char* desc1, unsigned char* desc2, float nndr_ratio)
 	{
-		hMatch(result1, result2, desc1, desc2);
+		hMatch(result1, result2, desc1, desc2, nndr_ratio);
 		if (result1.h_data)
 		{
 			int* h_ptr = &result1.h_data[0].match;

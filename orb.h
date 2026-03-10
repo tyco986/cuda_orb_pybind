@@ -21,8 +21,8 @@ namespace orb
 		/* Detect keypoints and compute descriptors */
 		void detectAndCompute(unsigned char* image, OrbData& result, int3 whp0, void** desc_addr = NULL, const bool compute_desc = true);
 
-		/* Match two results */
-		void match(OrbData& result1, OrbData& result2, unsigned char* desc1, unsigned char* desc2);
+		/* Match two results with NNDR filtering */
+		void match(OrbData& result1, OrbData& result2, unsigned char* desc1, unsigned char* desc2, float nndr_ratio = 0.75f);
 
 		/* Initialize data */
 		void initOrbData(OrbData& data, const int max_pts, const bool host, const bool dev);

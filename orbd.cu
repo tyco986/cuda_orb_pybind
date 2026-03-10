@@ -1470,7 +1470,7 @@ namespace orb
 	}
 
 
-	__global__ void gHammingMatch(OrbPoint* points1, unsigned char* desc1, unsigned char* desc2, int n1, int n2)
+	__global__ void gHammingMatch(OrbPoint* points1, unsigned char* desc1, unsigned char* desc2, int n1, int n2, float nndr_ratio)
 	{
 		__shared__ int idx_1st[X2];
 		__shared__ int idx_2nd[X2];
@@ -1546,9 +1546,9 @@ namespace orb
 		if (tix == 0)
 		{
 			OrbPoint* pt1 = points1 + pi1;
-			if (score_1st[0] < score_2nd[0] && score_1st[0] < MAX_DIST)
+			if (score_1st[0] < MAX_DIST &&
+				(float)score_1st[0] < (float)score_2nd[0] * nndr_ratio)
 			{
-				//OrbPoint* pt2 = points2 + idx_1st[0];
 				pt1->match = idx_1st[0];
 				pt1->distance = score_1st[0];
 			}
@@ -1799,11 +1799,11 @@ namespace orb
 	}
 
 
-	void hMatch(OrbData& result1, OrbData& result2, unsigned char* desc1, unsigned char* desc2)
+	void hMatch(OrbData& result1, OrbData& result2, unsigned char* desc1, unsigned char* desc2, float nndr_ratio)
 	{
 		dim3 block(X2);
 		dim3 grid(result1.num_pts);
-		gHammingMatch << <grid, block >> > (result1.d_data, desc1, desc2, result1.num_pts, result2.num_pts);
+		gHammingMatch << <grid, block >> > (result1.d_data, desc1, desc2, result1.num_pts, result2.num_pts, nndr_ratio);
 		CHECK(cudaDeviceSynchronize());
 		CheckMsg("hMatch() execution failed\n");
 	}
