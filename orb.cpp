@@ -26,6 +26,10 @@ namespace orb
 		{
 			CHECK(cudaFree(vmem));
 		}
+		if (bmem)
+		{
+			CHECK(cudaFree(bmem));
+		}
 	}
 
 
@@ -71,14 +75,17 @@ namespace orb
 		// Detect keypoints
 		this->detect(image, result);
 
+		// Sort keypoints for deterministic order (score desc, y, x)
+		hSortKeypoints(result.d_data, result.num_pts);
+
 		// Compute descriptors
 		if (compute_desc && result.num_pts > 0)
 		{
 			// Compute orientation
 			hComputeAngle(omem, result, oszp.data(), max_octave, patch_size);
 
-			// Blurring
-			hGassianBlur(omem, oszp.data(), max_octave);
+			// Blurring (out-of-place for determinism)
+			hGassianBlur(omem, bmem, oszp.data(), max_octave);
 
 			// Compute descriptors
 			unsigned char* desc = (unsigned char*)(*desc_addr);
@@ -118,7 +125,7 @@ namespace orb
 		data.num_pts = 0;
 		//data.max_pts = max_pts;
 		const size_t size = sizeof(OrbPoint) * max_pts;
-		data.h_data = host ? (OrbPoint*)malloc(size) : NULL;
+		data.h_data = host ? (OrbPoint*)calloc(1, size) : NULL;
 		data.d_data = NULL;
 		if (dev)
 		{
@@ -184,8 +191,14 @@ namespace orb
 		{
 			CHECK(cudaFree(vmem));
 		}
+		if (bmem)
+		{
+			CHECK(cudaFree(bmem));
+		}
 		CHECK(cudaMalloc((void**)&omem, obytes));
 		CHECK(cudaMalloc((void**)&vmem, vbytes));
+		bbytes = osizes[0] * sizeof(unsigned char);
+		CHECK(cudaMalloc((void**)&bmem, bbytes));
 
 		makeOffsets(pitchs, max_octave);
 	}

@@ -59,9 +59,11 @@ namespace orb
 		// Memory for reusing
 		unsigned char* omem = NULL;		// Shared memory of scaled images
 		float* vmem = NULL;				// Shared memory of score maps for non-max suppression
+		unsigned char* bmem = NULL;		// Temporary buffer for out-of-place Gaussian blur
 		// Size of memory
 		size_t obytes = 0;
 		size_t vbytes = 0;
+		size_t bbytes = 0;
 		// Size of octave layers
 		std::vector<int> oszp;
 		// Point counter

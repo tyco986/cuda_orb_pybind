@@ -35,11 +35,14 @@ namespace orb
 	void hFastDectectWithNMS(unsigned char* image, unsigned char* octave_images, float* vmem, OrbData& result, int* oszp,
 		int noctaves, int threshold, int border, bool harris_score);
 
+	/* Sort keypoints by (score desc, y, x) for deterministic order */
+	void hSortKeypoints(OrbPoint* d_points, int num_pts);
+
 	/* Compute orientation */
 	void hComputeAngle(unsigned char* octave_images, OrbData& result, int* oszp, int noctaves, int patch_size);
 
-	/* Gassian blurring */
-	void hGassianBlur(unsigned char* octave_images, int* oszp, int noctaves);
+	/* Gassian blurring (out-of-place via temp buffer for determinism) */
+	void hGassianBlur(unsigned char* octave_images, unsigned char* temp, int* oszp, int noctaves);
 
 	/* Compute descriptors */
 	void hDescribe(unsigned char* octave_images, OrbData& result, unsigned char* desc, int wta_k, int noctaves);

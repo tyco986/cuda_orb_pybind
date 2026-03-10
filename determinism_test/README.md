@@ -24,11 +24,13 @@ cd ..
 
 本测试旨在验证 cuda_orb_pybind 项目中除 main.cpp 以外的所有函数在多次运行时的数值一致性。每个测试函数运行 3 次，检查输出是否在数值层面完全一致。若存在不一致，将分析可能原因。
 
+**已知修复**: Keypoint 顺序已通过 Thrust GPU 排序 (score desc, y, x) 实现确定性；initOrbData 使用 calloc 零初始化 h_data。
+
 ## 2. 测试结果汇总
 
 - 总测试项: 27
-- 一致: 26
-- 不一致: 1
+- 一致: 27
+- 不一致: 0
 
 ## 3. 不一致函数详细表格
 
@@ -59,28 +61,12 @@ cd ..
 | Orbor::freeOrbData | orb.cpp | 128 | 是 | Deallocator; no output |
 | Orbor::updateParam | orb.cpp | 144 | 是 | Private; tested via detectAndCompute |
 | Orbor::detect | orb.cpp | 193 | 是 | Private; tested via detectAndCompute |
-| Orbor::detectAndCompute | orb.cpp | 57 | **否** | Keypoints or descriptors differ - possible CUDA non-determinism (atomicAdd, reduce order) |
+| Orbor::detectAndCompute | orb.cpp | 57 | 是 | OK |
 | Orbor::match | orb.cpp | 102 | 是 | OK |
 
 ## 4. 不一致项详细分析
 
-### Orbor::detectAndCompute (orb.cpp:57)
-
-- **原因**: Keypoints or descriptors differ - possible CUDA non-determinism (atomicAdd, reduce order)
-- **3次运行结果**:
-  - Run 1: num_pts=3031
-0: x=1695 y=39 octave=0 score=0.000001 angle=-2.795860 match=24858 dist=771287936
-1: x=1246 y=49 octave=0 score=0.000000 angle=0.052508 match=772409903 dist=1936876918
-2: x=1678 y=83 octa...
-  - Run 2: num_pts=3031
-0: x=1695 y=39 octave=0 score=0.000001 angle=-2.795860 match=24858 dist=771427952
-1: x=1246 y=49 octave=0 score=0.000000 angle=0.052508 match=772409915 dist=157511532
-2: x=1247 y=92 octav...
-  - Run 3: num_pts=3031
-0: x=1695 y=39 octave=0 score=0.000001 angle=-2.795860 match=24858 dist=771567968
-1: x=1246 y=49 octave=0 score=0.000000 angle=0.052508 match=1735287089 dist=1885300076
-2: x=1247 y=92 oct...
-
+无不一致项。
 
 ## 5. 保存的数据文件
 
@@ -91,4 +77,4 @@ cd ..
 
 ## 6. 结论
 
-共 1 个函数/测试项在多次运行中结果不一致。可能原因包括: CUDA 并行原子操作的非确定性、浮点运算顺序差异、未使用固定种子的随机数等。
+所有可测试函数在 3 次运行中均表现一致。

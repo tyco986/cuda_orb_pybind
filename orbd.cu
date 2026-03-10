@@ -1,5 +1,7 @@
 #include "orbd.h"
 #include <device_launch_parameters.h>
+#include <thrust/device_ptr.h>
+#include <thrust/sort.h>
 
 
 //#define DEBUG_SHOW
@@ -1713,6 +1715,28 @@ namespace orb
 	}
 
 
+	namespace
+	{
+		struct OrbPointCompare
+		{
+			__device__ __host__ bool operator()(const OrbPoint& a, const OrbPoint& b) const
+			{
+				if (a.score != b.score) return a.score > b.score;
+				if (a.y != b.y) return a.y < b.y;
+				return a.x < b.x;
+			}
+		};
+	}
+
+
+	void hSortKeypoints(OrbPoint* d_points, int num_pts)
+	{
+		if (num_pts <= 0) return;
+		thrust::device_ptr<OrbPoint> ptr(d_points);
+		thrust::sort(ptr, ptr + num_pts, OrbPointCompare());
+	}
+
+
 	void hComputeAngle(unsigned char* octave_images, OrbData& result, int* oszp, int noctaves, int patch_size)
 	{
 		int* aparams = oszp + noctaves * 3;		// pitchs and offsets
@@ -1729,7 +1753,7 @@ namespace orb
 	}
 
 
-	void hGassianBlur(unsigned char* octave_images, int* oszp, int noctaves)
+	void hGassianBlur(unsigned char* octave_images, unsigned char* temp, int* oszp, int noctaves)
 	{
 		int* osizes = oszp;
 		int* widths = osizes + noctaves;
@@ -1737,25 +1761,17 @@ namespace orb
 		int* pitchs = heights + noctaves;
 		int* offsets = pitchs + noctaves;
 
-		//dim3 block(X2, X2), grid;
 		dim3 block(X2, GR), grid;
 		for (int i = 0; i < noctaves; i++)
 		{
-			unsigned char* mem = octave_images + offsets[i];
-
-			//grid.x = (widths[i] - GR - GR + X2 - 1) / X2;
-			//grid.y = (heights[i] - GR - GR + X2 - 1) / X2;
-			//gaussFilter << <grid, block >> > (mem, mem, widths[i], heights[i], pitchs[i]);
-
-			//grid.x = (widths[i] + X2 - 1) / X2;
-			//grid.y = (heights[i] + X2 - 1) / X2;
-			//gConv2d << <grid, block >> > (mem, mem, widths[i], heights[i], pitchs[i]);
+			unsigned char* src = octave_images + offsets[i];
 
 			grid.x = (widths[i] + DX - 1) / DX;
 			grid.y = (heights[i] + X2 - 1) / X2;
-			gConv2dUnroll << <grid, block >> > (mem, mem, widths[i], heights[i], pitchs[i]);
+			gConv2dUnroll << <grid, block >> > (src, temp, widths[i], heights[i], pitchs[i]);
+			CHECK(cudaDeviceSynchronize());
+			CHECK(cudaMemcpy(src, temp, osizes[i] * sizeof(unsigned char), cudaMemcpyDeviceToDevice));
 		}
-		CHECK(cudaDeviceSynchronize());
 
 #ifdef DEBUG_SHOW
 		cv::Mat show;

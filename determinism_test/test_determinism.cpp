@@ -236,7 +236,7 @@ void test_Orbor_detectAndCompute() {
         r.consistent = descriptorsEqual(descs[0], descs[1], results[0].num_pts) &&
                        descriptorsEqual(descs[1], descs[2], results[1].num_pts);
     }
-    r.reason = r.consistent ? "OK" : "Keypoints or descriptors differ - possible CUDA non-determinism (atomicAdd, reduce order)";
+    r.reason = r.consistent ? "OK" : "Descriptors differ - possible floating-point non-determinism in hComputeAngle/hDescribe";
 
     for (int i = 0; i < NUM_RUNS; i++) {
         saveToFile(std::string(TEST_OUTPUT_DIR) + "/detectAndCompute_run_" + std::to_string(i + 1) + ".txt", r.run_outputs[i]);
@@ -394,6 +394,8 @@ static void generateReport() {
     report << "本测试旨在验证 cuda_orb_pybind 项目中除 main.cpp 以外的所有函数在多次运行时的数值一致性。"
            << "每个测试函数运行 " << NUM_RUNS << " 次，检查输出是否在数值层面完全一致。"
            << "若存在不一致，将分析可能原因。\n\n";
+    report << "**已知修复**: Keypoint 顺序已通过 Thrust GPU 排序 (score desc, y, x) 实现确定性；"
+           << "initOrbData 使用 calloc 零初始化 h_data。\n\n";
 
     report << "## 2. 测试结果汇总\n\n";
     int total = 0, inconsistent = 0;
