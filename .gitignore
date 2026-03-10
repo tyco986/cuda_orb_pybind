@@ -1,0 +1,50 @@
+# Build
+build/
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.out
+*.app
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Generated / output
+data/orb_show*.jpg
+data/cvshow_matched.jpg
+data/test_img.png
+determinism_test/results/*.txt
+
+# CUDA
+*.i
+*.ii
+*.gpu
+*.ptx
+*.cubin
+
+# OS
+.DS_Store
+Thumbs.db
