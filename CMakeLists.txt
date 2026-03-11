@@ -38,13 +38,9 @@ set(cuda_sources
   ${SRC_DIR}/cuda_utils.h
 )
 
-set(sources
-  ${CPP_DIR}/orb_aligner.cpp
-)
-
 include_directories(${SRC_DIR} ${CPP_DIR})
 
-# NVML for GPU peak monitoring
+# NVML for GPU peak monitoring (OrbAligner benchmark)
 set(NVML_LIBRARY "")
 if(EXISTS "/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1")
   set(NVML_LIBRARY "/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1")
@@ -66,9 +62,9 @@ else()
   set(HAVE_NVML 0)
 endif()
 
-#SET(CUDA_SEPARABLE_COMPILATION ON)
-
-cuda_add_executable(cuda_orb ${cuda_sources} ${sources}
+# OrbAligner benchmark executable (C++ equivalent of cuda_orb/test_orb_aligner.py)
+cuda_add_executable(cuda_orb ${cuda_sources}
+  ${CPP_DIR}/orb_aligner.cpp
   ${CPP_DIR}/test_orb_aligner.cpp
   OPTIONS -arch=sm_75)
 
